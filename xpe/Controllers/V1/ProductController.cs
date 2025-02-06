@@ -40,7 +40,19 @@ namespace xpe.Controllers.V1
         [HttpGet("{id:Guid}")]
         public async Task<ActionResult<ProductDTO>> GetById(Guid id)
         {
+            if (id == Guid.Empty)
+            {
+                _notifier.Handle("ID do produto é inválido.");
+                return CustomResponse();
+            }
+            
             var product = await _productService.GetById(id);
+
+            if (product == null)
+            {
+                _notifier.Handle("Produto não encontrado!");
+                return CustomResponse();
+            }
 
             var dto = _mapper.Map<ProductDTO>(product);
 
@@ -53,6 +65,8 @@ namespace xpe.Controllers.V1
         {
             try
             {
+                if(!ModelState.IsValid) return CustomResponse(ModelState);
+                
                 var product = _mapper.Map<Product>(productDTO);
 
                 var result = await _productService.Add(product);
@@ -78,13 +92,23 @@ namespace xpe.Controllers.V1
         {
             try
             {
+                if (!ModelState.IsValid) return CustomResponse(ModelState);
+                
                 if (id != productDTO.Id)
                 {
                     _notifier.Handle("Os ids informados não são iguais!");
                     return CustomResponse();
                 }
+                
+                var existingProduct = await _productService.GetById(id);
 
-                var product = _mapper.Map<Product>(productDTO);
+                if (existingProduct == null)
+                {
+                    _notifier.Handle("Produto não encontrado.");
+                    return CustomResponse();
+                }
+                
+                var product = _mapper.Map(productDTO, existingProduct);
 
                 var result = await _productService.Update(product);
 
@@ -105,29 +129,28 @@ namespace xpe.Controllers.V1
 
         // PATCH api/v1/products/{id}
         [HttpPatch("{id:Guid}")]
-        public async Task<ActionResult<ProductDTO>> Patch(Guid id, [FromBody] JsonPatchDocument<Product> patch)
+        public async Task<ActionResult<ProductDTO>> Patch(Guid id, [FromBody] ProductDTO productDTO)
         {
             try
             {
-                if (patch == null)
+                if (productDTO == null)
                 {
                     _notifier.Handle("Dados não informados!");
                     return CustomResponse();
                 }
         
-                var product = await _productService.GetById(id);
-                if (product == null)
+                var existingProduct = await _productService.GetById(id);
+                if (existingProduct == null)
                 {
                     _notifier.Handle("Produto não encontrado!");
                     return CustomResponse();
                 }
         
-                patch.ApplyTo(product, ModelState);
-        
-                if (!ModelState.IsValid)
+                var product = _mapper.Map(productDTO, existingProduct);
+                
+                if (productDTO.Price <= 0) 
                 {
-                    _notifier.Handle("Produto inválido!");
-                    return CustomResponse();
+                    product.Price = existingProduct.Price;
                 }
         
                 var result = await _productService.Update(product);

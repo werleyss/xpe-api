@@ -7,8 +7,8 @@ namespace xpe.Repositorys;
 
 public class ProductRepository : IProductRepository
 {
-    protected readonly AppDbContext _context;
-    protected readonly DbSet<Product> _dbSet;
+    private readonly AppDbContext _context;
+    private readonly DbSet<Product> _dbSet;
     
     public ProductRepository(AppDbContext dbContext)
     {
@@ -16,9 +16,9 @@ public class ProductRepository : IProductRepository
         _dbSet = _context.Set<Product>();
     }
     
-    public Task<List<Product>> GetAll()
+    public async Task<List<Product>> GetAll()
     {
-        return Task.FromResult(new List<Product>());
+        return await _dbSet.ToListAsync();
     }
 
     public async Task<Product> GetById(Guid id)
@@ -28,19 +28,48 @@ public class ProductRepository : IProductRepository
 
     public async Task<Product> Add(Product product)
     {
-        await _dbSet.AddAsync(product);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _dbSet.AddAsync(product);
+            await _context.SaveChangesAsync();
         
-        return product;
+            return product;
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException("Ocorreu um erro ao adicionar o produto.", ex);
+        }
     }
 
     public async Task<Product> Update(Product product)
     {
-        return await Task.FromResult(new Product());
+        try
+        {
+            _dbSet.Update(product);
+            await _context.SaveChangesAsync();
+        
+            return product;
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException("Ocorreu um erro ao atualizar o produto.", ex);
+        }
     }
 
-    public Task Delete(Guid id)
+    public async Task Delete(Guid id)
     {
-        return Task.FromResult(new Product());
+        try
+        {
+            var product = await _dbSet.FindAsync(id);
+            
+            if (product == null) throw new ApplicationException("Produto não encontrado!");
+            
+            _dbSet.Remove(product);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException("Ocorreu um erro ao remover o produto.", ex);
+        }
     }
 }
