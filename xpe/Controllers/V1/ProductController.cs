@@ -129,33 +129,30 @@ namespace xpe.Controllers.V1
 
         // PATCH api/v1/products/{id}
         [HttpPatch("{id:Guid}")]
-        public async Task<ActionResult<ProductDTO>> Patch(Guid id, [FromBody] ProductDTO productDTO)
+        public async Task<ActionResult<ProductDTO>> Patch(Guid id, [FromBody] JsonPatchDocument<Product> productPatch)
         {
             try
             {
-                if (productDTO == null)
+                if (productPatch == null)
                 {
                     _notifier.Handle("Dados não informados!");
                     return CustomResponse();
                 }
         
-                var existingProduct = await _productService.GetById(id);
-                if (existingProduct == null)
+                var product = await _productService.GetById(id);
+                if (product == null)
                 {
                     _notifier.Handle("Produto não encontrado!");
                     return CustomResponse();
                 }
-        
-                var product = _mapper.Map(productDTO, existingProduct);
                 
-                if (productDTO.Price <= 0) 
-                {
-                    product.Price = existingProduct.Price;
-                }
-        
+                productPatch.ApplyTo(product);
+                
                 var result = await _productService.Update(product);
+                
+                var dto  = _mapper.Map<ProductDTO>(result);
         
-                return CustomResponse(result);
+                return CustomResponse(dto);
             }
             catch (Exception ex)
             {
