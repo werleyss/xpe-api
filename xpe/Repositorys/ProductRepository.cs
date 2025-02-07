@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using xpe.Data;
 using xpe.Interfaces.Repositorys;
 using xpe.Models;
@@ -15,7 +16,7 @@ public class ProductRepository : IProductRepository
         _context = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _dbSet = _context.Set<Product>();
     }
-    
+
     public async Task<List<Product>> GetAll()
     {
         return await _dbSet.ToListAsync();
@@ -24,6 +25,11 @@ public class ProductRepository : IProductRepository
     public async Task<Product> GetById(Guid id)
     {
         return await _dbSet.FindAsync(id);
+    }
+
+    public async Task<List<Product>> Search(Expression<Func<Product, bool>> predicate)
+    {
+        return await _dbSet.Where(predicate).ToListAsync();
     }
 
     public async Task<Product> Add(Product product)
@@ -71,5 +77,15 @@ public class ProductRepository : IProductRepository
         {
             throw new ApplicationException("Ocorreu um erro ao remover o produto.", ex);
         }
+    }
+
+    public async Task<int> Count()
+    {
+        return await _dbSet.CountAsync();
+    }
+
+    public void Dispose()
+    {
+       _context.Dispose();
     }
 }

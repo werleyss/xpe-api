@@ -168,7 +168,7 @@ namespace xpe.Controllers.V1
         }
 
         // DELETE api/v1/products/{id}
-        [HttpDelete("{id:guid}")]
+        [HttpDelete("{id:Guid}")]
         public async Task<ActionResult> Delete(Guid id)
         {
             try
@@ -194,6 +194,33 @@ namespace xpe.Controllers.V1
                 _notifier.Handle($"Error: Ocoreu um erro ao remover produto: {ex}");
                 return CustomResponse();
             }
+        }
+
+        // GET api/v1/products
+        [HttpGet("search/name/{name}")]
+        public async Task<ActionResult<List<ProductDTO>>> GetByName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                _notifier.Handle("Nome do produto não informado!.");
+                return CustomResponse();
+            }
+
+            var product = await _productService.GetByName(name);
+
+            var dto = _mapper.Map<List<ProductDTO>>(product);
+
+            return CustomResponse(dto);
+        }
+
+        // GET api/v1/products
+        [HttpGet("count")]
+        public async Task<ActionResult<List<ProductDTO>>> Count()
+        {
+            return CustomResponse(new
+            {
+                count = await _productService.Count()
+            });
         }
     }
 }

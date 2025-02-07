@@ -19,5 +19,9 @@ public class ProductValidation : AbstractValidator<Product>
         RuleFor(c => c.Price)
             .GreaterThan(0).WithMessage("O valor deve ser maior que zero.")
             .LessThan(decimal.MaxValue).WithMessage($"O valor deve ser menor que {decimal.MaxValue}.");
+
+        RuleFor(p => p.Sku)
+            .MaximumLength(50)
+            .WithMessage("O campo {PropertyName} deve ter no máximo {MaxLength} caracteres");
     }
 }

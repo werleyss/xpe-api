@@ -1,14 +1,16 @@
+using xpe.Interfaces;
 using xpe.Interfaces.Repositorys;
 using xpe.Interfaces.Services;
 using xpe.Models;
+using xpe.Models.Validations;
 
 namespace xpe.Services;
 
-public class ProductService : IProductService
+public class ProductService : BasicService, IProductService
 {
     private readonly IProductRepository _productRepository;
     
-    public ProductService(IProductRepository productRepository)
+    public ProductService(IProductRepository productRepository, INotifier notifier) : base(notifier)
     {
         _productRepository = productRepository;
     }
@@ -25,11 +27,15 @@ public class ProductService : IProductService
 
     public async Task<Product> Add(Product product)
     {
+        if (!RunValidation(new ProductValidation(), product)) return null;
+
         return await _productRepository.Add(product);
     }
 
     public async Task<Product> Update(Product product)
     {
+        if (!RunValidation(new ProductValidation(), product)) return null;
+
         return await _productRepository.Update(product);
     }
 
@@ -38,5 +44,15 @@ public class ProductService : IProductService
         await _productRepository.Delete(id);
         
         return;
+    }
+
+    public async Task<int> Count()
+    {
+        return await _productRepository.Count();
+    }
+
+    public async Task<List<Product>> GetByName(string name)
+    {
+        return await _productRepository.Search(cd => cd.Name.Contains(name));
     }
 }
