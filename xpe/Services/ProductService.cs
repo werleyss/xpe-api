@@ -53,6 +53,6 @@ public class ProductService : BasicService, IProductService
 
     public async Task<List<Product>> GetByName(string name)
     {
-        return await _productRepository.Search(cd => cd.Name.Contains(name));
+        return await _productRepository.Search(cd => cd.Name.ToUpper().Contains(name.ToUpper()));
     }
 }
